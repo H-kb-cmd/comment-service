@@ -5,7 +5,7 @@
 ## 模块结构
 
 ```
-j9-7-5-1
+project
 ├── pom.xml                                     # 聚合 POM，统一依赖版本管理
 ├── application                                 # 启动模块（Spring Boot 入口）
 └── shared.all                                  # 共享模块聚合
