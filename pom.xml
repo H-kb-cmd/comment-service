@@ -19,6 +19,7 @@
 		<java.version>11</java.version>
 		<!--SpringCloud Alibaba版本-->
 		<spring-cloud-alibaba.version>2.2.6.RELEASE</spring-cloud-alibaba.version>
+		<spring-cloud.version>Hoxton.SR9</spring-cloud.version>
 	</properties>
 
 	<modules>
@@ -27,6 +28,18 @@
 	</modules>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-openfeign</artifactId>
+		</dependency>
+
+		<!-- Sentinel：给 Feign 提供熔断降级能力（也是 Day 5 限流的基础） -->
+		<dependency>
+			<groupId>com.alibaba.cloud</groupId>
+			<artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+		</dependency>
+
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -48,16 +61,17 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
-		<dependency>
-			<groupId>com.youkeda.exercise</groupId>
-			<artifactId>user-spring-boot-starter</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
 	</dependencies>
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 			<dependency>
 				<groupId>com.github.pagehelper</groupId>
 				<artifactId>pagehelper-spring-boot-starter</artifactId>
@@ -89,12 +103,7 @@
 				<version>3.10</version>
 			</dependency>
 
-			<!-- 用户服务包 -->
-			<dependency>
-				<groupId>com.youkeda.exercise.shared</groupId>
-				<artifactId>user.service</artifactId>
-				<version>0.0.1-SNAPSHOT</version>
-			</dependency>
+			<!-- 用户服务包（已移除：改为在 comment.service 模块内自带 User / UserService） -->
 
 			<dependency>
 				<groupId>com.alibaba.cloud</groupId>

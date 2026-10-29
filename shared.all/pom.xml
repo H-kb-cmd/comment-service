@@ -17,6 +17,7 @@
 
     <modules>
         <module>comment.shared</module>
+        <module>comment-common</module>
     </modules>
 
 </project>

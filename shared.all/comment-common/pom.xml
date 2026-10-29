@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>                                                    <!-- 继承 shared.all 的父 pom，复用版本管理 -->
+        <groupId>com.youkeda.exercise.shared</groupId>
+        <artifactId>shared.all</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>comment-common</artifactId>                     <!-- 本模块坐标 -->
+    <!-- 不写 <dependencies>，因为它只放 POJO，不需要任何依赖 -->
+</project>

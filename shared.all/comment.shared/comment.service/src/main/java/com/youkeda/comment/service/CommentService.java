@@ -1,6 +1,7 @@
 package com.youkeda.comment.service;
 
 import com.youkeda.comment.model.Comment;
+import com.youkeda.comment.model.Paging;
 import com.youkeda.comment.model.Result;
 
 import java.util.List;
@@ -40,4 +41,6 @@ public interface CommentService {
     public List<Comment> findByRefId(String refId);
 
     public List<Comment> findByUserIds(List<Long> ids);
+
+    public Paging<Comment> findPage(int pageNum, int pageSize);
 }

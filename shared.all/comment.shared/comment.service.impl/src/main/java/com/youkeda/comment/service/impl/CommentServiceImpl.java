@@ -1,8 +1,11 @@
 package com.youkeda.comment.service.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.youkeda.comment.dao.CommentDAO;
 import com.youkeda.comment.dataobject.CommentDO;
 import com.youkeda.comment.model.Comment;
+import com.youkeda.comment.model.Paging;
 import com.youkeda.comment.model.Result;
 import com.youkeda.comment.model.User;
 import com.youkeda.comment.service.CommentService;
@@ -61,7 +64,7 @@ public class CommentServiceImpl implements CommentService {
 
         Result<List<Comment>> result = new Result<>();
         //查询所有的评论记录包含回复的
-        List<Comment> comments = commentDAO.findByRefId(refId);
+        List<Comment> comments = buildComments(commentDAO.findByRefId(refId));
         //构建 map 结构
         Map<Long, Comment> commentMap = new HashMap<>();
         //初始化一个虚拟根节点，0 可以对应的是所有一级评论的父亲
@@ -101,34 +104,44 @@ public class CommentServiceImpl implements CommentService {
     }
 
     public List<Comment> findAll() {
-        List<Comment> results = new ArrayList<>();
-        List<CommentDO> dos = commentDAO.findAll();
+        return buildComments(commentDAO.findAll());
+    }
 
+    /**
+     * 把 CommentDO 列表补全成 Comment 列表（填充 author）
+     *
+     * 抽成独立方法的原因：
+     *   findAll() 和 findPage() 都需要"补作者"这一步，
+     *   如果不抽出来，两处会写一模一样的十几行代码。
+     */
+    private List<Comment> buildComments(List<CommentDO> dos) {
+        // ① 收集所有 userId
         List<Long> userIds = new ArrayList<>();
-
         for (CommentDO commentDO : dos) {
             userIds.add(commentDO.getUserId());
         }
 
+        // ② 批量查用户：1 次查询查完所有人，不是每条评论查一次
         List<User> userModels = userService.findByIds(userIds);
 
+        // ③ 建索引 userId -> User，避免后面嵌套循环（O(n²)）
         Map<Long, User> usersMap = new HashMap<>();
-
         for (User userModel : userModels) {
             usersMap.put(userModel.getId(), userModel);
         }
 
+        // ④ 逐条补全
+        List<Comment> results = new ArrayList<>();
         for (CommentDO commentDO : dos) {
             Comment comment = commentDO.toModel();
             User author = usersMap.get(comment.getAuthor().getId());
             if (author != null) {
                 comment.setAuthor(author);
             }
-
             results.add(comment);
         }
-
         return results;
+
     }
 
     public int insert(Comment comment) {
@@ -144,7 +157,8 @@ public class CommentServiceImpl implements CommentService {
     }
 
     public List<Comment> findByRefId(String refId) {
-        return commentDAO.findByRefId(refId);
+
+        return buildComments(commentDAO.findByRefId(refId));
     }
 
     public List<Comment> findByUserIds(List<Long> ids) {
@@ -170,5 +184,18 @@ public class CommentServiceImpl implements CommentService {
         }
 
         return results;
+    }
+
+    @Override
+    public Paging<Comment> findPage(int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
+
+        List<CommentDO> dos = commentDAO.findAll();
+
+        PageInfo<CommentDO> info = new PageInfo<>(dos);
+
+        List<Comment> comments = buildComments(dos);
+
+        return new Paging<>(info.getPageNum(), info.getPageSize(), info.getPages(), info.getTotal(), comments);
     }
 }

@@ -91,9 +91,11 @@ public class CommentDO {
         User user = new User();
         user.setId(getUserId());
         comment.setAuthor(user);
+        comment.setRefId(getRefId());
 
         comment.setContent(getContent());
         comment.setRefId(getRefId());
+        comment.setParentId(getParentId());   // ★ 补上父评论ID：不传的话补全作者后楼中楼会全部塌成一级评论
         return comment;
     }
 }

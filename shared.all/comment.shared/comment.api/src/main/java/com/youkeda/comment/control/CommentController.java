@@ -4,6 +4,7 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.youkeda.comment.model.Comment;
 import com.youkeda.comment.model.Paging;
+import com.youkeda.comment.model.Result;
 import com.youkeda.comment.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -19,58 +20,55 @@ public class CommentController {
 
     @GetMapping("/comments")
     @ResponseBody
-    public Paging<Comment> getAll(@RequestParam(value = "pageNum", required = false) Integer pageNum,
-                                    @RequestParam(value = "pageSize", required = false) Integer pageSize) {
+    public Result<Paging<Comment>> getAll(@RequestParam(value = "pageNum", required = false) Integer pageNum,
+                                  @RequestParam(value = "pageSize", required = false) Integer pageSize) {
+        if (pageNum == null) { pageNum = 1; }
+        if (pageSize == null) { pageSize = 15; }
 
-        if (pageNum == null) {
-            pageNum = 1;
-        }
-        if (pageSize == null) {
-            pageSize = 15;
-        }
-
-        // 设置当前页数为1，以及每页3条记录
-        Page<Comment> page = PageHelper.startPage(pageNum, pageSize).doSelectPage(() -> commentService.findAll());
-
-        return new Paging<>(page.getPageNum(), page.getPageSize(), page.getPages(), page.getTotal(), page.getResult());
+        return Result.ok(commentService.findPage(pageNum, pageSize));
     }
+
 
     @PostMapping("/comment")
     @ResponseBody
-    public Comment save(@RequestBody Comment comment) {
+    public Result<Comment> save(@RequestBody Comment comment) {
         commentService.insert(comment);
-        return comment;
+        return Result.ok(comment);
     }
 
     @PostMapping("/comment/batchAdd")
     @ResponseBody
-    public List<Comment> batchAdd(@RequestBody List<Comment> comments) {
+    public Result<List<Comment>> batchAdd(@RequestBody List<Comment> comments) {
         commentService.batchAdd(comments);
-        return comments;
+        return Result.ok(comments);
     }
 
     @PostMapping("/comment/update")
     @ResponseBody
-    public Comment update(@RequestBody Comment comment) {
+    public Result<Comment> update(@RequestBody Comment comment) {
         commentService.update(comment);
-        return comment;
+        return Result.ok(comment);
     }
 
     @GetMapping("/comment/del")
     @ResponseBody
-    public boolean delete(@RequestParam("id") Long id) {
-        return commentService.delete(id) > 0;
+    public Result<Boolean> delete(@RequestParam("id") Long id) {
+        int rows = commentService.delete(id);
+        if (rows > 0) {
+            return Result.ok(true);
+        }
+        return Result.fail("评论不存在或已被删除");
     }
 
     @GetMapping("/comment/findByRefId")
     @ResponseBody
-    public List<Comment> findByRefId(@RequestParam("refId") String refId) {
-        return commentService.findByRefId(refId);
+    public Result<List<Comment>> findByRefId(@RequestParam("refId") String refId) {
+        return Result.ok(commentService.findByRefId(refId));
     }
 
     @GetMapping("/comment/findByUserIds")
     @ResponseBody
-    public List<Comment> findByUserIds(@RequestParam("userIds") List<Long> ids) {
-        return commentService.findByUserIds(ids);
+    public Result<List<Comment>> findByUserIds(@RequestParam("userIds") List<Long> ids) {
+        return Result.ok(commentService.findByUserIds(ids));
     }
 }

@@ -19,11 +19,7 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- 用户服务包 -->
-        <dependency>
-            <groupId>com.youkeda.exercise.shared</groupId>
-            <artifactId>user.service</artifactId>
-        </dependency>
+        <!-- 用户服务包：已移除，User/UserService 现在来自 comment.service 模块 -->
 
         <dependency>
             <groupId>com.github.pagehelper</groupId>

@@ -20,7 +20,7 @@ public interface CommentDAO {
 
     int delete(@Param("id") long id);
 
-    List<Comment> findByRefId(@Param("refId") String refId);
+    List<CommentDO> findByRefId(@Param("refId") String refId);
 
     List<CommentDO> findByUserIds(@Param("userIds") List<Long> ids);
 }
