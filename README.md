@@ -40,6 +40,10 @@
 | `user-service` | 8082 | `user-service` | 用户查询（单个 / 批量） | `user_db` |
 
 > 本仓库只包含 `comment-service`。同系列的另外两个服务是独立工程，通过 Nacos 服务名互联，不依赖编译期耦合。
+>
+> 配套仓库：[user-service](https://github.com/H-kb-cmd/user-service) · [comment-gateway](https://github.com/H-kb-cmd/comment-gateway)
+>
+> 构建顺序：`user-service` 依赖本工程的 `comment-common` 模块，**先在本仓库执行 `mvn install`**，再构建 `user-service`。
 
 ---
 
