@@ -4,6 +4,7 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.youkeda.comment.dao.CommentDAO;
 import com.youkeda.comment.dataobject.CommentDO;
+import com.youkeda.comment.exception.SensitiveWordException;
 import com.youkeda.comment.model.Comment;
 import com.youkeda.comment.model.Paging;
 import com.youkeda.comment.model.Result;
@@ -11,6 +12,7 @@ import com.youkeda.comment.model.User;
 import com.youkeda.comment.service.CommentService;
 import com.youkeda.comment.service.UserService;
 import com.youkeda.comment.util.CommentDOUtil;
+import com.youkeda.comment.util.SensitiveWordFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,10 @@ public class CommentServiceImpl implements CommentService {
     @Autowired
     private UserService userService;
 
+    /** 敏感词过滤器：启动时建好前缀树，每条评论只做一次线性扫描 */
+    @Autowired
+    private SensitiveWordFilter sensitiveWordFilter;
+
     @PostConstruct
     public void init() {
         System.out.println("CommentServiceImpl初始化完毕");
@@ -42,6 +48,16 @@ public class CommentServiceImpl implements CommentService {
         if (StringUtils.isEmpty(refId) || userId == 0 || StringUtils.isEmpty(content)) {
             result.setCode("500");
             result.setMessage("refId、userId、content 不能为空");
+            return result;
+        }
+
+        // ★ 敏感词检测：必须在 HTML 转义之前做
+        //   因为转义会把 < 变成 &lt;、& 变成 &amp;，词库里的词如果含这些符号就再也匹配不上了
+        try {
+            checkSensitive(content);
+        } catch (SensitiveWordException e) {
+            result.setCode("400");
+            result.setMessage(e.getMessage());
             return result;
         }
 
@@ -97,6 +113,7 @@ public class CommentServiceImpl implements CommentService {
         List<CommentDO> dos = new ArrayList<>();
 
         for (Comment comment : commentDOs) {
+            checkSensitive(comment.getContent());   // 逐条校验：任一条命中就抛异常，整批不会写库
             dos.add(CommentDOUtil.toDO(comment));
         }
 
@@ -144,8 +161,30 @@ public class CommentServiceImpl implements CommentService {
 
     }
 
+    /**
+     * 敏感词校验：命中就抛异常，由调用方决定怎么处理
+     *
+     * 抽成独立方法的原因：post() 和 insert() 两个写入口都要校验，
+     * 但不能复制两遍逻辑，否则以后改规则（比如改成"打码放行"）要改两处。
+     */
+    private void checkSensitive(String content) {
+        String hitWord = sensitiveWordFilter.findFirst(content);
+        if (hitWord != null) {
+            // 注意：不要把命中的词返回给前端，否则等于把词库内容告诉对方，改个同音字就能绕过
+            System.out.println("[敏感词] 拦截一条评论，命中: " + hitWord);
+            throw new SensitiveWordException("评论包含敏感词，请修改后再发布");
+        }
+    }
+
     public int insert(Comment comment) {
-        return commentDAO.insert(CommentDOUtil.toDO(comment));
+        checkSensitive(comment.getContent());       // ★ 真正的 HTTP 写入口，校验必须放在这里
+        CommentDO commentDO = CommentDOUtil.toDO(comment);
+        int rows = commentDAO.insert(commentDO);
+        // ★ 把数据库生成的自增主键回填给 model
+        //   不回填的话，Controller 返回给前端的 id 永远是 0，
+        //   前端拿到的评论没法回复、没法删除（因为它不知道自己的 id）
+        comment.setId(commentDO.getId());
+        return rows;
     }
 
     public int update(Comment comment) {

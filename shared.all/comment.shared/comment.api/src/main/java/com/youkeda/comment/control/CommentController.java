@@ -4,6 +4,7 @@ import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.youkeda.comment.exception.SensitiveWordException;
 import com.youkeda.comment.model.Comment;
 import com.youkeda.comment.model.Paging;
 import com.youkeda.comment.model.Result;
@@ -34,15 +35,30 @@ public class CommentController {
     @PostMapping("/comment")
     @ResponseBody
     public Result<Comment> save(@RequestBody Comment comment) {
-        commentService.insert(comment);
-        return Result.ok(comment);
+        try {
+            commentService.insert(comment);
+            return Result.ok(comment);
+        } catch (SensitiveWordException e) {
+            // Service 层只负责"发现并抛出"，返回什么格式由 Controller 决定
+            Result<Comment> result = Result.fail(e.getMessage());
+            result.setCode("400");
+            return result;
+        }
     }
 
     @PostMapping("/comment/batchAdd")
     @ResponseBody
     public Result<List<Comment>> batchAdd(@RequestBody List<Comment> comments) {
-        commentService.batchAdd(comments);
-        return Result.ok(comments);
+        try {
+            commentService.batchAdd(comments);
+
+            return Result.ok(comments);
+        } catch (SensitiveWordException e) {
+           Result<List<Comment>> result = Result.fail(e.getMessage());
+           result.setCode("400");
+           return result;
+        }
+
     }
 
     @PostMapping("/comment/update")
